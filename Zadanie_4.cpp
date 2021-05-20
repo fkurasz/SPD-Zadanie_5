@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <tuple>
 #include "Dane.h"
 
 using namespace std;
@@ -160,7 +161,7 @@ void Schrage(vector<Dane> N, int& Cmax, vector<Dane>& W)
 }
 
 // wersja 1
-void SchragePRMT(vector<Dane> N, int& Cmax, vector<Dane>& W)
+void SchragePRMT(vector<Dane> N, int& Cmax)
 {
     // krok 1
 	int t = 0; 
@@ -205,17 +206,145 @@ void SchragePRMT(vector<Dane> N, int& Cmax, vector<Dane>& W)
 	}
 }
 
+// obliczanie bloku
+std::tuple<int, int, int> obliczanieBloku(std::vector<Dane> permutacja) // liczenie bloku a, b, c na podstawie permutacji
+{
+  int a = -1;
+  int b = -1;
+  int c = -1;
+
+  int time = permutacja[0].R;
+  int cMax = 0;
+  // CMAX dla bloku
+  int CMAX = c_max(permutacja);
+  Dane pi(0,0,0,0);
+
+  int n = permutacja.size();
+
+  // idz po wszystkich zadaniach
+  for(int i = 0; i < n; i++)
+  {
+    Dane temp = permutacja[i];
+
+    // wybierz wiekszy czas
+    time = std::max(time, temp.R);
+    time += temp.P;
+
+    if((time + permutacja[i].Q) == CMAX)
+    {
+        b = i;//b jako ostatni zwiększa CMAX
+    }
+
+    cMax = max(cMax, time + temp.Q);
+  }
+
+  time = permutacja[0].R;
+  cMax = 0;
+  
+  // idz po wszystkich zadaniach
+  for(int i = 0; i < n; i++)
+  {
+    Dane temp = permutacja[i];
+
+    // wybierz wiekszy czas
+    time = max(time, temp.R);
+    time += temp.P;
+
+    {
+      if(a < 0)
+      {
+      int suma = 0;
+      for(int j = i; j <= b; j++)
+      {
+        suma += (permutacja[j].P);
+      }
+      suma += permutacja[b].Q;
+      if(CMAX == permutacja[i].R + suma)
+        a = i;
+      }
+    }
+
+    cMax = max(cMax, time + temp.Q);
+  }
+
+    time = permutacja[0].R;
+    cMax = 0;
+
+  for(int i = a; i <= b; i++)
+  {
+    if(permutacja[i].Q < permutacja[b].Q)
+        c = i;
+  }
+
+  return std::make_tuple(a,b,c);
+}
+
+
+// carlier N_vec[i] to np. data001: , ub to Cmax, W to permutacja
+void Carlier(vector<Dane> N,int& ub,vector<Dane>& W)
+{
+    int cmax_schrage = 0;
+    //permutacja z schrage
+  std::vector<Dane> PI;
+  Schrage(N,cmax_schrage,PI);
+
+    // cmax z schrage_prmt
+  int u = 0;
+  //eval(PI);//wynik schrage bez
+    Schrage(PI,u,PI);
+
+  if(u < ub)
+    ub = u;
+  //wyznacz blok
+  auto bl = obliczanieBloku(PI);
+  int b = std::get<1>(bl);
+  int c = std::get<2>(bl);
+
+  if(c == -1)
+    return;
+
+    // tutaj wybierany jest ten 140 7 67
+  int ri = 1000000, qi = 10000000, pi = 0;
+  for(int i = c + 1; i <= b; i++)
+  {
+    if(PI[i].R < ri)
+      ri = PI[i].R;
+
+    if(PI[i].Q < qi)
+      qi = PI[i].Q;
+
+    pi += PI[i].P;
+  }
+
+  int r_temp = PI[c].R;
+  PI[c].R = max(PI[c].R, ri + pi);
+  int lb = 0;
+  SchragePRMT(PI,lb);
+
+  if(lb < ub)
+    Carlier(PI,ub,PI);
+
+  PI[c].R = r_temp;
+
+  int q_temp = PI[c].Q;
+  PI[c].Q = max(PI[c].Q, qi + pi);
+  //lb = schrage_prmtS(PI);
+  SchragePRMT(PI,lb);
+
+  if(lb < ub)
+    Carlier(PI,ub,PI);
+
+  PI[c].Q = q_temp;
+}
+
 // dodaje 7 elementow ze slajdu
 void add(vector<vector<Dane>> &n)
 {
     vector<Dane> temp;
-    temp.push_back(Dane(10,5,7,1));
-    temp.push_back(Dane(13,6,26,2));
-    temp.push_back(Dane(11,7,24,3));
-    temp.push_back(Dane(20,4,21,4));
-    temp.push_back(Dane(30,3,8,5));
-    temp.push_back(Dane(0,6,17,6));
-    temp.push_back(Dane(30,2,0,7));
+    temp.push_back(Dane(0,27,78,1));
+    temp.push_back(Dane(140,7,67,2));
+    temp.push_back(Dane(14,36,54,3));
+    temp.push_back(Dane(133,76,5,4));
     
     /*
     temp.push_back(Dane(77,11,82,1));
@@ -320,26 +449,45 @@ int main()
         }
         std::cout << endl;
     }
-    std::cout << endl << endl;
+    std::cout << endl;
 
-    
     std::cout << "SCHRAGE PRMT" << endl;
-    // Schrage Z PODZIALEM Z WYNIKAMI 
+    // Schrage Z WYNIKAMI 
+    //std::cout << "Rozmiar: " << N_vec.size() << endl;
     for (int i = 0; i < N_vec.size(); i++)
     {
         W.clear();
         Cmax = 0;
         // uporządkowany zbior Dla danych z data.001 ...itp.
-        SchragePRMT(N_vec[i], Cmax, W);
+        SchragePRMT(N_vec[i], Cmax);
         W_vec.push_back(W);
-
 
         std::cout << "data.00" << i << ": ";
         std::cout << "Cmax: " << Cmax << endl;
-        //std::cout << "Cmax: " << c_max(W) << " ";
     }
     std::cout << endl << endl;
-    
+
+    std::cout << "CARLIER" << endl;
+    for (int i = 0; i < N_vec.size(); i++)
+    {
+        W.clear();
+        Cmax = 999999999;
+        // uporządkowany zbior Dla danych z data.001 ...itp.
+        //Schrage(N_vec[i], Cmax, W);
+        Carlier(N_vec[i],Cmax,W);
+        W_vec.push_back(W);
+
+        std::cout << "data.00" << i << ": ";
+        std::cout << "Cmax: " << Cmax << " ";
+        //std::cout << "Cmax: " << c_max(W) << " ";
+        std::cout << "Kolejnosc: ";
+        for (int j = 0; j < W.size(); j++)
+        {
+            std::cout << W.at(j).getIndex() << " ";
+        }
+        std::cout << endl;
+    }
+    std::cout << endl << endl;
 
 }
 
