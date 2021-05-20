@@ -335,6 +335,7 @@ void Carlier(vector<Dane> N,int& ub,vector<Dane>& W)
     Carlier(PI,ub,PI);
 
   PI[c].Q = q_temp;
+  W = PI;
 }
 
 // dodaje 7 elementow ze slajdu
