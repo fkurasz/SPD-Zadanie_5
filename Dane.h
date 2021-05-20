@@ -19,23 +19,10 @@ public:
 	int getIndex() { return index; }
 	void setP(int newP) { P = newP; }
 	void setALL(int newR, int newP, int newQ, int newIndex) { R = newR; P = newP;  Q = newQ;  index = newIndex; }
-private:
+public:
 	int R;
 	int P;
 	int Q;
 	int index;
-};
-
-class BB
-{
-public:
-	void set(Dane wierzch, int lower_LB) { wierzcholek = wierzch; lb = lower_LB; }
-	int getLB() { return lb; }
-	BB() = default;
-	~BB() = default;
-
-private:
-	Dane wierzcholek;
-	int lb;
 };
 
